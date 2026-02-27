@@ -36,35 +36,44 @@
       overflow-x: hidden;
     }
 
-    /* ══ CUSTOM CURSOR ══ */
+    /* ══ CUSTOM CURSOR — diamond ══ */
     #cursor-ring {
       position: fixed;
       top: 0; left: 0;
-      width: 36px; height: 36px;
-      border: 1px solid rgba(0,210,200,0.65);
-      border-radius: 50%;
+      width: 28px; height: 28px;
       pointer-events: none;
       z-index: 99999;
-      transform: translate(-50%,-50%);
-      transition: width 0.3s ease, height 0.3s ease,
-                  border-color 0.3s ease, background 0.3s ease;
+      transform: translate(-50%,-50%) rotate(0deg);
       will-change: left, top;
+      transition: width 0.3s ease, height 0.3s ease, opacity 0.2s ease;
+    }
+    /* Diamond shape via clip-path on a pseudo — we use an inline SVG instead */
+    #cursor-ring svg {
+      width: 100%; height: 100%;
+      overflow: visible;
+      transition: transform 0.35s cubic-bezier(0.34,1.56,0.64,1),
+                  filter 0.3s ease;
+    }
+    #cursor-ring.hovering {
+      width: 40px; height: 40px;
+    }
+    #cursor-ring.hovering svg {
+      filter: drop-shadow(0 0 7px rgba(0,240,224,0.9)) drop-shadow(0 0 14px rgba(0,210,200,0.5));
+    }
+    #cursor-ring.clicking svg {
+      transform: scale(0.78) rotate(45deg);
     }
     #cursor-dot {
       position: fixed;
       top: 0; left: 0;
-      width: 4px; height: 4px;
-      background: var(--cyan2);
-      border-radius: 50%;
+      width: 3px; height: 3px;
+      background: #00f5e8;
       pointer-events: none;
       z-index: 99999;
       transform: translate(-50%,-50%);
-      transition: width 0.15s, height 0.15s, background 0.15s;
+      transition: opacity 0.2s;
       will-change: left, top;
     }
-    #cursor-ring.hovering  { width:52px; height:52px; border-color:rgba(0,210,200,0.85); background:rgba(0,210,200,0.06); }
-    #cursor-dot.hovering   { width:6px; height:6px; background:#fff; }
-    #cursor-ring.clicking  { width:28px; height:28px; background:rgba(0,210,200,0.14); }
 
     /* ── Grid overlay ── */
     body::before {
@@ -499,8 +508,36 @@
 </head>
 <body>
 
-<!-- ─── CUSTOM CURSOR ─── -->
-<div id="cursor-ring"></div>
+<!-- ─── CUSTOM CURSOR — glowing diamond ─── -->
+<div id="cursor-ring">
+  <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="cur-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+        <stop offset="0%"   stop-color="#00f5e8"/>
+        <stop offset="100%" stop-color="#00909a"/>
+      </linearGradient>
+      <filter id="cur-glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="1.8" result="blur"/>
+        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+    </defs>
+    <!-- Outer diamond -->
+    <path d="M20 2 L38 20 L20 38 L2 20 Z"
+          fill="rgba(0,240,224,0.06)"
+          stroke="url(#cur-grad)"
+          stroke-width="1.5"
+          filter="url(#cur-glow)"/>
+    <!-- Top-right bright edge -->
+    <path d="M20 2 L38 20" stroke="#00f5e8" stroke-width="2" stroke-linecap="round"/>
+    <!-- Inner diamond -->
+    <path d="M20 9 L31 20 L20 31 L9 20 Z"
+          fill="none"
+          stroke="rgba(0,240,224,0.35)"
+          stroke-width="0.8"/>
+    <!-- Center dot -->
+    <circle cx="20" cy="20" r="2" fill="#00f5e8"/>
+  </svg>
+</div>
 <div id="cursor-dot"></div>
 
 <!-- ─── NAV ─── -->
@@ -859,10 +896,10 @@
 </div>
 
 <script>
-  /* ══ CUSTOM CURSOR ══ */
+  /* ══ CUSTOM CURSOR — glowing diamond ══ */
   const ring = document.getElementById('cursor-ring');
   const dot  = document.getElementById('cursor-dot');
-  let mx = 0, my = 0, rx = 0, ry = 0;
+  let mx = 0, my = 0, rx = 0, ry = 0, angle = 0;
 
   document.addEventListener('mousemove', e => {
     mx = e.clientX; my = e.clientY;
@@ -871,10 +908,12 @@
   });
 
   (function animateRing() {
-    rx += (mx - rx) * 0.12;
-    ry += (my - ry) * 0.12;
+    rx += (mx - rx) * 0.10;
+    ry += (my - ry) * 0.10;
+    angle += 0.4; /* slow continuous rotation */
     ring.style.left = rx + 'px';
     ring.style.top  = ry + 'px';
+    ring.style.transform = `translate(-50%,-50%) rotate(${angle}deg)`;
     requestAnimationFrame(animateRing);
   })();
 
